@@ -8,7 +8,7 @@ Cada display e os leds estão multiplexados, portanto para controla-los foi nece
 <h2 align="center">Esquemático dos leds da placa</h2>
 <div align="center">
 <img src="https://user-images.githubusercontent.com/16793600/194778509-709f14dd-ab1a-4695-a364-436d7a145bf8.PNG" width="700px"/></div>
-<h2 align="center">Esquemático dos leds dos displays da placa</h2>
+<h2 align="center">Esquemático dos displays da placa</h2>
 <div align="center">
 <img src="https://user-images.githubusercontent.com/16793600/194778503-e50ce5e1-3547-4190-be59-d58888f8bf76.PNG" width="700px"/>
 </div>
