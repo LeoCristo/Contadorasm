@@ -1,0 +1,6 @@
+Dependencies for Project 'gpio', Target 'Target 1': (DO NOT MODIFY !)
+CompilerVersion: 6180000::V6.18::ARMCLANG
+F (.\gpio.s)(0x6336F2D1)(--cpu Cortex-M4.fp.sp --pd "__EVAL SETA 1" -g-IC:\Users\leona\AppData\Local\Arm\Packs\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C129--pd "__UVISION_VERSION SETA 537"--pd "TM4C1294NCPDT SETA 1"--list .\listings\gpio.lst--xref -o .\objects\gpio.o--depend .\objects\gpio.d)
+F (.\main.s)(0x633FC3E0)(--cpu Cortex-M4.fp.sp --pd "__EVAL SETA 1" -g-IC:\Users\leona\AppData\Local\Arm\Packs\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C129--pd "__UVISION_VERSION SETA 537"--pd "TM4C1294NCPDT SETA 1"--list .\listings\main.lst--xref -o .\objects\main.o--depend .\objects\main.d)
+F (.\startup.s)(0x632E58FE)(--cpu Cortex-M4.fp.sp --pd "__EVAL SETA 1" -g-IC:\Users\leona\AppData\Local\Arm\Packs\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C129--pd "__UVISION_VERSION SETA 537"--pd "TM4C1294NCPDT SETA 1"--list .\listings\startup.lst--xref -o .\objects\startup.o--depend .\objects\startup.d)
+F (.\utils.s)(0x632E58FE)(--cpu Cortex-M4.fp.sp --pd "__EVAL SETA 1" -g-IC:\Users\leona\AppData\Local\Arm\Packs\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C129--pd "__UVISION_VERSION SETA 537"--pd "TM4C1294NCPDT SETA 1"--list .\listings\utils.lst--xref -o .\objects\utils.o--depend .\objects\utils.d)

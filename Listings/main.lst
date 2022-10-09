@@ -1,0 +1,887 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ; Este programa deve esperar o usuário pressionar uma ch
+                       ave.
+    2 00000000         ; Caso o usuário pressione uma chave, um LED deve piscar
+                        a cada 1 segundo.
+    3 00000000         
+    4 00000000         ; ------------------------------------------------------
+                       -------------------------
+    5 00000000                 THUMB                        ; Instruções do tip
+                                                            o Thumb-2
+    6 00000000         ; ------------------------------------------------------
+                       -------------------------
+    7 00000000         
+    8 00000000         ; Declarações EQU - Defines
+    9 00000000         ;<NOME>         EQU <VALOR>
+   10 00000000         ; ========================
+   11 00000000         ; Definições de Valores
+   12 00000000         ;0x10 ativa o Digito 1, 0x20 ativo o Digito 2
+   13 00000000 00000010 
+                       Display1
+                               EQU              0x10        ;Seleciona o Displa
+                                                            y1
+   14 00000000 00000020 
+                       Display2
+                               EQU              0x20        ;Seleciona o Displa
+                                                            y2
+   15 00000000 00000001 
+                       Ativar  EQU              0x01        ;Modo Ativar
+   16 00000000 00000000 
+                       Desativar
+                               EQU              0x00        ;Modo Desativar
+   17 00000000 00000001 
+                       PASSO   EQU              0x01        ;PASSO de contagem,
+                                                             PASSO pode ser igu
+                                                            al a 1,2,3,4,5,6,7,
+                                                            8,9
+   18 00000000 00000001 
+                       USR_SW1 EQU              0x01        ;BOTAO PJ0 = BOTAO 
+                                                            ESQUERDO DA PLACA
+   19 00000000 00000002 
+                       USR_SW2 EQU              0x02        ;BOTAO PJ1 = BOTAO 
+                                                            DIREITO DA PLACA
+   20 00000000 00000020 
+                       Ativar_leds
+                               EQU              0x20        ;Ativa os leds
+   21 00000000 00000000 
+                       Desativar_leds
+                               EQU              0x00        ;Desativa os leds
+   22 00000000 000000AA 
+                       Leds_seq1
+                               EQU              2_10101010
+   23 00000000 00000055 
+                       Leds_seq2
+                               EQU              2_01010101
+   24 00000000         ; ------------------------------------------------------
+                       -------------------------
+   25 00000000         ; Área de Dados - Declarações de variáveis
+   26 00000000                 AREA             DATA, ALIGN=2
+   27 00000000         ; Se alguma variável for chamada em outro arquivo
+   28 00000000         ;EXPORT  <var> [DATA,SIZE=<tam>]   ; Permite chamar a va
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+                       riável <var> a 
+   29 00000000         ; partir de outro arquivo
+   30 00000000         ;<var> SPACE <tam>                        ; Declara uma 
+                       variável de nome <var>
+   31 00000000         ; de <tam> bytes a partir da primeira 
+   32 00000000         ; posição da RAM  
+   33 00000000         
+   34 00000000         ; ------------------------------------------------------
+                       -------------------------
+   35 00000000         ; Área de Código - Tudo abaixo da diretiva a seguir será
+                        armazenado na memória de 
+   36 00000000         ;                  código
+   37 00000000                 AREA             |.text|, CODE, READONLY, ALIGN=
+2
+   38 00000000         
+   39 00000000         ; Se alguma função do arquivo for chamada em outro arqui
+                       vo 
+   40 00000000                 EXPORT           Start       ; Permite chamar a 
+                                                            função Start a part
+                                                            ir de 
+   41 00000000         ; outro arquivo. No caso startup.s
+   42 00000000         
+   43 00000000         ; Se chamar alguma função externa 
+   44 00000000         ;IMPORT <func>              ; Permite chamar dentro dest
+                       e arquivo uma 
+   45 00000000         ; função <func>
+   46 00000000                 IMPORT           PLL_Init
+   47 00000000                 IMPORT           SysTick_Init
+   48 00000000                 IMPORT           SysTick_Wait1ms
+   49 00000000                 IMPORT           GPIO_Init
+   50 00000000                 IMPORT           PortN_Output
+   51 00000000                 IMPORT           PortJ_Input
+   52 00000000                 IMPORT           AtivarDesativar_Display
+   53 00000000                 IMPORT           AtivarDesativar_Leds
+   54 00000000                 IMPORT           Leds_out
+   55 00000000         ; ------------------------------------------------------
+                       -------------------------
+   56 00000000         ; Função main()
+   57 00000000         Start
+   58 00000000 F7FF FFFE       BL               PLL_Init    ;Chama a subrotina 
+                                                            para alterar o cloc
+                                                            k do microcontrolad
+                                                            or para 80MHz
+   59 00000004 F7FF FFFE       BL               SysTick_Init ;Chama a subrotina
+                                                             para inicializar o
+                                                             SysTick
+   60 00000008 F7FF FFFE       BL               GPIO_Init   ;Chama a subrotina 
+                                                            que inicializa os G
+                                                            PIO
+   61 0000000C         
+   62 0000000C         MainLoop
+   63 0000000C F04F 0901       MOV              R9,#PASSO   ; R9 será o passo d
+                                                            e contagem
+   64 00000010         Resetar
+   65 00000010 F04F 0A00       MOV              R10,#0      ; Contador auxiliar
+                                                            
+   66 00000014 F04F 0200       MOV              R2,#0       ; Contador DIGITO 1
+                                                                 
+   67 00000018 F04F 0300       MOV              R3,#0       ; Contador DIGITO 2
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+                                                            
+   68 0000001C F44F 78FA       MOV              R8,#500     ; Variavel para con
+                                                            trole do tempo do p
+                                                            asso da contagem
+   69 00000020 F04F 0455       MOV              R4,#2_01010101 
+                                                            ; Padrao dos leds
+   70 00000024         testa_entrada
+   71 00000024         ;Utilizar dois contadores, um para cada display
+   72 00000024         ;Ativa um dos displays por um tempo T
+   73 00000024         
+   74 00000024         ;***************************************************
+   75 00000024         ;Lê os botoes USR_SW1 = PJ0 e USR_SW2 = PJ1
+   76 00000024         ;Se SW1 = 0 e SW2 = 1 R9++ 
+   77 00000024         ; SW1 = 1 e SW2 = 0 r9--
+   78 00000024         ;Para outros casos não alterar o passo
+   79 00000024         ;Caso Ocarra leitura de botao sendo pressionado, em R12 
+                       é salvo 1
+   80 00000024         ;Na próxima leitura se o botao foi solto, nao pressionad
+                       o, o valor 2 é salvo em R12=SW2 e  R11=S1
+   81 00000024         
+   82 00000024         TESTE_AMBOSSOLTOS
+   83 00000024 F7FF FFFE       BL               PortJ_Input ;Retorna a leitura 
+                                                            do portJ no registr
+                                                            ador R0
+   84 00000028 F000 0003       AND              R0,#2_00000011 ;Retorna para R0
+                                                             apenas a informaçã
+                                                            o de J0 e J1 com os
+                                                             outros bits reseta
+                                                            dos 
+   85 0000002C 2803            CMP              R0,#2_00000011 ;Testa se apenas
+                                                             SW1 e SW2 estão so
+                                                            ltos,ou seja, em ní
+                                                            vel alto
+   86 0000002E D10A            BNE              TESTE_AMBOSPRESSIONADOS
+   87 00000030 F1BB 0F01       CMP              R11,#1      ;Se o botao foi pre
+                                                            ssionado anteriorme
+                                                            nte
+   88 00000034 D101            BNE              t2
+   89 00000036 F04F 0B02       MOV              R11,#2      ;R11=2
+   90 0000003A         t2
+   91 0000003A F1BC 0F01       CMP              R12,#1
+   92 0000003E D101            BNE              t3
+   93 00000040 F04F 0C02       MOV              R12,#2      ;R12=2
+   94 00000044         t3
+   95 00000044 E017            B                ATUALIZA_PASSO
+   96 00000046         TESTE_AMBOSPRESSIONADOS
+   97 00000046 2800            CMP              R0,#2_00000000
+   98 00000048 D104            BNE              TESTE_SW1
+   99 0000004A F04F 0B01       MOV              R11,#1
+  100 0000004E F04F 0C01       MOV              R12,#1
+  101 00000052 E010            B                ATUALIZA_PASSO
+  102 00000054         TESTE_SW1
+  103 00000054 2802            CMP              R0,#2_00000010
+  104 00000056 D107            BNE              TESTE_SW2
+  105 00000058 F1BC 0F01       CMP              R12,#1      ;Se o botao foi pre
+                                                            ssionado anteriorme
+                                                            nte
+  106 0000005C D101            BNE              t4
+  107 0000005E F04F 0C02       MOV              R12,#2      ;R12=2
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+  108 00000062         t4
+  109 00000062 F04F 0B01       MOV              R11,#1      ;R11=1
+  110 00000066 E006            B                ATUALIZA_PASSO
+  111 00000068         TESTE_SW2
+  112 00000068 F1BB 0F01       CMP              R11,#1      ;Se o botao foi pre
+                                                            ssionado anteriorme
+                                                            nte
+  113 0000006C D101            BNE              t5
+  114 0000006E F04F 0B02       MOV              R11,#2      ;R11=2
+  115 00000072         t5
+  116 00000072 F04F 0C01       MOV              R12,#1      ;R12=1
+  117 00000076         
+  118 00000076         
+  119 00000076         ATUALIZA_PASSO
+  120 00000076 F1BB 0F02       CMP              R11,#2
+  121 0000007A D106            BNE              teste_r12
+  122 0000007C F04F 0B00       MOV              R11,#0      ;Reseta R11
+  123 00000080 F1B9 0F09       CMP              R9,#9       ;Se o PASSO já esti
+                                                            ver no máximo, entã
+                                                            o vai ao LOOP sem i
+                                                            ncrementar
+  124 00000084 D001            BEQ              teste_r12
+  125 00000086 F109 0901       ADD              R9,#1
+  126 0000008A         
+  127 0000008A         teste_r12
+  128 0000008A F1BC 0F02       CMP              R12,#2
+  129 0000008E D106            BNE              Incrementa_digito2
+  130 00000090 F04F 0C00       MOV              R12,#0      ;Reseta R12
+  131 00000094 F1B9 0F01       CMP              R9,#1       ;Testa se o passo é
+                                                             1, pois é o passo 
+                                                            minimo, se sim vai 
+                                                            ao LOOP sem decreme
+                                                            ntar
+  132 00000098 D001            BEQ              Incrementa_digito2
+  133 0000009A F1A9 0901       SUB              R9,#1
+  134 0000009E         
+  135 0000009E         Incrementa_digito2
+  136 0000009E         
+  137 0000009E         ;Display 2 sendo atribuido por R7
+  138 0000009E 461F            MOV              R7,R3
+  139 000000A0 F7FF FFFE       BL               PortN_Output
+  140 000000A4         
+  141 000000A4 F04F 0020       MOV              R0,#Display2
+  142 000000A8 F04F 0501       MOV              R5,#Ativar
+  143 000000AC F7FF FFFE       BL               AtivarDesativar_Display
+  144 000000B0         
+  145 000000B0         ;Desativa um dos displays
+  146 000000B0 F04F 0010       MOV              R0,#Display1
+  147 000000B4 F04F 0500       MOV              R5,#Desativar
+  148 000000B8 F7FF FFFE       BL               AtivarDesativar_Display
+  149 000000BC         ;Desativa os leds
+  150 000000BC F04F 0000       MOV              R0,#Desativar_leds
+  151 000000C0 F7FF FFFE       BL               AtivarDesativar_Leds
+  152 000000C4         
+  153 000000C4 F04F 0001       MOV              R0,#1
+  154 000000C8 F7FF FFFE       BL               SysTick_Wait1ms
+  155 000000CC         
+  156 000000CC         ;Display 1 sendo atribuido por R7
+  157 000000CC 4617            MOV              R7,R2
+
+
+
+ARM Macro Assembler    Page 5 
+
+
+  158 000000CE F7FF FFFE       BL               PortN_Output
+  159 000000D2         
+  160 000000D2 F04F 0010       MOV              R0,#Display1
+  161 000000D6 F04F 0501       MOV              R5,#Ativar
+  162 000000DA F7FF FFFE       BL               AtivarDesativar_Display
+  163 000000DE         
+  164 000000DE F04F 0020       MOV              R0,#Display2
+  165 000000E2 F04F 0500       MOV              R5,#Desativar
+  166 000000E6 F7FF FFFE       BL               AtivarDesativar_Display
+  167 000000EA         ;Desativa os leds
+  168 000000EA F04F 0000       MOV              R0,#Desativar_leds
+  169 000000EE F7FF FFFE       BL               AtivarDesativar_Leds
+  170 000000F2         ;Espera ligado por 5ms f = 200Hz
+  171 000000F2 F04F 0001       MOV              R0,#1
+  172 000000F6 F7FF FFFE       BL               SysTick_Wait1ms
+  173 000000FA         
+  174 000000FA F5B8 7FFA       CMP              R8,#500     ;Verifica se está n
+                                                            o loop inicial
+  175 000000FE D10D            BNE              CHECAR_TESTE
+  176 00000100         ;Teste de numeros primos
+  177 00000100 4836            LDR              R0,=PRIMOS
+  178 00000102         TESTE_PRIMOS
+  179 00000102 F810 1B01       LDRB             R1,[R0],#1
+  180 00000106 2900            CMP              R1,#0
+  181 00000108 BF0C            ITE              EQ          ;Se o loop de primo
+                                                            s chegou no dado 0,
+                                                             entao nao o dado n
+                                                            ao é primo
+  182 0000010A 2600            MOVEQ            R6,#0       ;Se R1 =0, Então nã
+                                                            o é primo R6 = 0
+  183 0000010C 2601            MOVNE            R6,#1       ;Senão, então é pri
+                                                            mo R6 = 1
+  184 0000010E D005            BEQ              CHECAR_TESTE
+  185 00000110 4551            CMP              R1,R10
+  186 00000112 BF0C            ITE              EQ
+  187 00000114 2601            MOVEQ            R6,#1
+  188 00000116 2600            MOVNE            R6,#0
+  189 00000118 D000            BEQ              CHECAR_TESTE
+  190 0000011A E7F2            B                TESTE_PRIMOS
+  191 0000011C         CHECAR_TESTE
+  192 0000011C 2E00            CMP              R6,#0       ;1 PRIMO 
+  193 0000011E D104            BNE              LEDS_ACESOS
+  194 00000120         LEDS_APAGADOS
+  195 00000120 F04F 0000       MOV              R0,#Desativar_leds
+  196 00000124 F7FF FFFE       BL               AtivarDesativar_Leds
+  197 00000128 E015            B                FIM_LEDS
+  198 0000012A         LEDS_ACESOS
+  199 0000012A         ;Desativa um dos displays
+  200 0000012A F04F 0020       MOV              R0,#Display2
+  201 0000012E F04F 0500       MOV              R5,#Desativar
+  202 00000132 F7FF FFFE       BL               AtivarDesativar_Display
+  203 00000136 F04F 0010       MOV              R0,#Display1
+  204 0000013A F7FF FFFE       BL               AtivarDesativar_Display
+  205 0000013E F04F 0020       MOV              R0,#Ativar_leds
+  206 00000142 F7FF FFFE       BL               AtivarDesativar_Leds
+  207 00000146         ;Rotaciona a sequencia dos leds acesos
+  208 00000146         
+  209 00000146         
+  210 00000146 F5B8 7FFA       CMP              R8,#500
+
+
+
+ARM Macro Assembler    Page 6 
+
+
+  211 0000014A BF08            IT               EQ
+  212 0000014C F084 04FF       EOREQ            R4,R4,#2_11111111
+  213 00000150 4620            MOV              R0,R4
+  214 00000152 F7FF FFFE       BL               Leds_out
+  215 00000156         
+  216 00000156         FIM_LEDS
+  217 00000156         
+  218 00000156 F04F 0001       MOV              R0,#1
+  219 0000015A F7FF FFFE       BL               SysTick_Wait1ms
+  220 0000015E         ;Subtrai 1 de R8 e testa se já é nulo, se sim pula para 
+                       o próximo número
+  221 0000015E         ;R8 serve para deixar o display 1 e 2 ligados por um tem
+                       po determinado pelos delays colocados no código acima
+  222 0000015E         ;T = (Tdisplay1*n1+Tdisplay2*n2)*R8
+  223 0000015E F1A8 0801       SUB              R8,#1
+  224 00000162 F5B8 7FE1       CMP              R8,#450
+  225 00000166 F43F AF5D       BEQ              testa_entrada
+  226 0000016A F5B8 7FC8       CMP              R8,#400
+  227 0000016E F43F AF59       BEQ              testa_entrada
+  228 00000172 F5B8 7FAF       CMP              R8,#350
+  229 00000176 F43F AF55       BEQ              testa_entrada
+  230 0000017A F5B8 7F96       CMP              R8,#300
+  231 0000017E F43F AF51       BEQ              testa_entrada
+  232 00000182 F1B8 0F96       CMP              R8,#150
+  233 00000186 F43F AF4D       BEQ              testa_entrada
+  234 0000018A F1B8 0F32       CMP              R8,#50
+  235 0000018E F43F AF49       BEQ              testa_entrada
+  236 00000192 F1B8 0F00       CMP              R8,#0
+  237 00000196 D182            BNE              Incrementa_digito2 
+                                                            ;testa_entrada
+  238 00000198 F04F 0600       MOV              R6,#0
+  239 0000019C 44CA            ADD              R10,R9      ;Incrementa o conta
+                                                            dor auxiliar para t
+                                                            este de números pri
+                                                            mos
+  240 0000019E         ;Testa se R3 estourou, passou de 9
+  241 0000019E 444B            ADD              R3,R9       ;Incrementa o conta
+                                                            dor do display2
+  242 000001A0 2B0A            CMP              R3,#10
+  243 000001A2 D202            BHS              Incrementa_digito1
+  244 000001A4         ;
+  245 000001A4 F44F 78FA       MOV              R8,#500
+  246 000001A8 E779            B                Incrementa_digito2
+  247 000001AA         
+  248 000001AA         Incrementa_digito1
+  249 000001AA F44F 78FA       MOV              R8,#500
+  250 000001AE F1A3 030A       SUB              R3,#10
+  251 000001B2 F102 0201       ADD              R2,#1       ;Incrementa o conta
+                                                            dor do display1
+  252 000001B6 2A0A            CMP              R2,#10
+  253 000001B8 F4BF AF2A       BHS              Resetar
+  254 000001BC E76F            B                Incrementa_digito2
+  255 000001BE         
+  256 000001BE E725            B                MainLoop    ;Se o teste viu que
+                                                             nenhuma chave está
+                                                             pressionada, volta
+                                                             para o laço princi
+                                                            pal
+  257 000001C0         
+
+
+
+ARM Macro Assembler    Page 7 
+
+
+  258 000001C0         
+  259 000001C0         
+  260 000001C0         
+  261 000001C0         
+  262 000001C0         
+  263 000001C0         ;Eh necessario configurar os Ports Q,A,B e P
+  264 000001C0         ; Saidas   =  Q0 Q1 Q2 Q3 A4 A5 A6 A7 P6 B4 B5
+  265 000001C0         ; Entradas =  J0 J1
+  266 000001C0         
+  267 000001C0 55      LEDS_SEQ
+                               DCB              2_01010101
+  268 000001C1 02 03 05 
+              07 0B 0D 
+              11 13 17 
+              1D 1F 25 
+              29 2B 2F 
+              35 3B 3D 
+              43 47 49 
+              4F 53 59 
+              61 00    PRIMOS  DCB              2, 3, 5, 7, 11, 13, 17, 19, 23,
+ 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97,0
+  269 000001DB         ; ------------------------------------------------------
+                       --------------------------------------------------------
+                       -----------
+  270 000001DB         ; Fim do Arquivo
+  271 000001DB         ; ------------------------------------------------------
+                       --------------------------------------------------------
+                       ----------- 
+  272 000001DB 00              ALIGN                        ;Garante que o fim 
+                                                            da seção está alinh
+                                                            ada 
+  273 000001DC                 END                          ;Fim do arquivo
+              00000000 
+Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp.sp --depen
+d=.\objects\main.d -o.\objects\main.o -IC:\Users\leona\AppData\Local\Arm\Packs\
+Keil\TM4C_DFP\1.1.0\Device\Include\TM4C129 --predefine="__EVAL SETA 1" --predef
+ine="__UVISION_VERSION SETA 537" --predefine="TM4C1294NCPDT SETA 1" --list=.\li
+stings\main.lst main.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+DATA 00000000
+
+Symbol: DATA
+   Definitions
+      At line 26 in file main.s
+   Uses
+      None
+Comment: DATA unused
+1 symbol
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+.text 00000000
+
+Symbol: .text
+   Definitions
+      At line 37 in file main.s
+   Uses
+      None
+Comment: .text unused
+ATUALIZA_PASSO 00000076
+
+Symbol: ATUALIZA_PASSO
+   Definitions
+      At line 119 in file main.s
+   Uses
+      At line 95 in file main.s
+      At line 101 in file main.s
+      At line 110 in file main.s
+
+CHECAR_TESTE 0000011C
+
+Symbol: CHECAR_TESTE
+   Definitions
+      At line 191 in file main.s
+   Uses
+      At line 175 in file main.s
+      At line 184 in file main.s
+      At line 189 in file main.s
+
+FIM_LEDS 00000156
+
+Symbol: FIM_LEDS
+   Definitions
+      At line 216 in file main.s
+   Uses
+      At line 197 in file main.s
+Comment: FIM_LEDS used once
+Incrementa_digito1 000001AA
+
+Symbol: Incrementa_digito1
+   Definitions
+      At line 248 in file main.s
+   Uses
+      At line 243 in file main.s
+Comment: Incrementa_digito1 used once
+Incrementa_digito2 0000009E
+
+Symbol: Incrementa_digito2
+   Definitions
+      At line 135 in file main.s
+   Uses
+      At line 129 in file main.s
+      At line 132 in file main.s
+      At line 237 in file main.s
+      At line 246 in file main.s
+      At line 254 in file main.s
+
+LEDS_ACESOS 0000012A
+
+Symbol: LEDS_ACESOS
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+   Definitions
+      At line 198 in file main.s
+   Uses
+      At line 193 in file main.s
+Comment: LEDS_ACESOS used once
+LEDS_APAGADOS 00000120
+
+Symbol: LEDS_APAGADOS
+   Definitions
+      At line 194 in file main.s
+   Uses
+      None
+Comment: LEDS_APAGADOS unused
+LEDS_SEQ 000001C0
+
+Symbol: LEDS_SEQ
+   Definitions
+      At line 267 in file main.s
+   Uses
+      None
+Comment: LEDS_SEQ unused
+MainLoop 0000000C
+
+Symbol: MainLoop
+   Definitions
+      At line 62 in file main.s
+   Uses
+      At line 256 in file main.s
+Comment: MainLoop used once
+PRIMOS 000001C1
+
+Symbol: PRIMOS
+   Definitions
+      At line 268 in file main.s
+   Uses
+      At line 177 in file main.s
+Comment: PRIMOS used once
+Resetar 00000010
+
+Symbol: Resetar
+   Definitions
+      At line 64 in file main.s
+   Uses
+      At line 253 in file main.s
+Comment: Resetar used once
+Start 00000000
+
+Symbol: Start
+   Definitions
+      At line 57 in file main.s
+   Uses
+      At line 40 in file main.s
+Comment: Start used once
+TESTE_AMBOSPRESSIONADOS 00000046
+
+Symbol: TESTE_AMBOSPRESSIONADOS
+   Definitions
+      At line 96 in file main.s
+   Uses
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+Relocatable symbols
+
+      At line 86 in file main.s
+Comment: TESTE_AMBOSPRESSIONADOS used once
+TESTE_AMBOSSOLTOS 00000024
+
+Symbol: TESTE_AMBOSSOLTOS
+   Definitions
+      At line 82 in file main.s
+   Uses
+      None
+Comment: TESTE_AMBOSSOLTOS unused
+TESTE_PRIMOS 00000102
+
+Symbol: TESTE_PRIMOS
+   Definitions
+      At line 178 in file main.s
+   Uses
+      At line 190 in file main.s
+Comment: TESTE_PRIMOS used once
+TESTE_SW1 00000054
+
+Symbol: TESTE_SW1
+   Definitions
+      At line 102 in file main.s
+   Uses
+      At line 98 in file main.s
+Comment: TESTE_SW1 used once
+TESTE_SW2 00000068
+
+Symbol: TESTE_SW2
+   Definitions
+      At line 111 in file main.s
+   Uses
+      At line 104 in file main.s
+Comment: TESTE_SW2 used once
+t2 0000003A
+
+Symbol: t2
+   Definitions
+      At line 90 in file main.s
+   Uses
+      At line 88 in file main.s
+Comment: t2 used once
+t3 00000044
+
+Symbol: t3
+   Definitions
+      At line 94 in file main.s
+   Uses
+      At line 92 in file main.s
+Comment: t3 used once
+t4 00000062
+
+Symbol: t4
+   Definitions
+      At line 108 in file main.s
+   Uses
+      At line 106 in file main.s
+Comment: t4 used once
+t5 00000072
+
+
+
+ARM Macro Assembler    Page 4 Alphabetic symbol ordering
+Relocatable symbols
+
+
+Symbol: t5
+   Definitions
+      At line 115 in file main.s
+   Uses
+      At line 113 in file main.s
+Comment: t5 used once
+testa_entrada 00000024
+
+Symbol: testa_entrada
+   Definitions
+      At line 70 in file main.s
+   Uses
+      At line 225 in file main.s
+      At line 227 in file main.s
+      At line 229 in file main.s
+      At line 231 in file main.s
+      At line 233 in file main.s
+      At line 235 in file main.s
+
+teste_r12 0000008A
+
+Symbol: teste_r12
+   Definitions
+      At line 127 in file main.s
+   Uses
+      At line 121 in file main.s
+      At line 124 in file main.s
+
+24 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+Ativar 00000001
+
+Symbol: Ativar
+   Definitions
+      At line 15 in file main.s
+   Uses
+      At line 142 in file main.s
+      At line 161 in file main.s
+
+Ativar_leds 00000020
+
+Symbol: Ativar_leds
+   Definitions
+      At line 20 in file main.s
+   Uses
+      At line 205 in file main.s
+Comment: Ativar_leds used once
+Desativar 00000000
+
+Symbol: Desativar
+   Definitions
+      At line 16 in file main.s
+   Uses
+      At line 147 in file main.s
+      At line 165 in file main.s
+      At line 201 in file main.s
+
+Desativar_leds 00000000
+
+Symbol: Desativar_leds
+   Definitions
+      At line 21 in file main.s
+   Uses
+      At line 150 in file main.s
+      At line 168 in file main.s
+      At line 195 in file main.s
+
+Display1 00000010
+
+Symbol: Display1
+   Definitions
+      At line 13 in file main.s
+   Uses
+      At line 146 in file main.s
+      At line 160 in file main.s
+      At line 203 in file main.s
+
+Display2 00000020
+
+Symbol: Display2
+   Definitions
+      At line 14 in file main.s
+   Uses
+      At line 141 in file main.s
+      At line 164 in file main.s
+      At line 200 in file main.s
+
+Leds_seq1 000000AA
+
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Absolute symbols
+
+Symbol: Leds_seq1
+   Definitions
+      At line 22 in file main.s
+   Uses
+      None
+Comment: Leds_seq1 unused
+Leds_seq2 00000055
+
+Symbol: Leds_seq2
+   Definitions
+      At line 23 in file main.s
+   Uses
+      None
+Comment: Leds_seq2 unused
+PASSO 00000001
+
+Symbol: PASSO
+   Definitions
+      At line 17 in file main.s
+   Uses
+      At line 63 in file main.s
+Comment: PASSO used once
+USR_SW1 00000001
+
+Symbol: USR_SW1
+   Definitions
+      At line 18 in file main.s
+   Uses
+      None
+Comment: USR_SW1 unused
+USR_SW2 00000002
+
+Symbol: USR_SW2
+   Definitions
+      At line 19 in file main.s
+   Uses
+      None
+Comment: USR_SW2 unused
+11 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+AtivarDesativar_Display 00000000
+
+Symbol: AtivarDesativar_Display
+   Definitions
+      At line 52 in file main.s
+   Uses
+      At line 143 in file main.s
+      At line 148 in file main.s
+      At line 162 in file main.s
+      At line 166 in file main.s
+      At line 202 in file main.s
+      At line 204 in file main.s
+
+AtivarDesativar_Leds 00000000
+
+Symbol: AtivarDesativar_Leds
+   Definitions
+      At line 53 in file main.s
+   Uses
+      At line 151 in file main.s
+      At line 169 in file main.s
+      At line 196 in file main.s
+      At line 206 in file main.s
+
+GPIO_Init 00000000
+
+Symbol: GPIO_Init
+   Definitions
+      At line 49 in file main.s
+   Uses
+      At line 60 in file main.s
+Comment: GPIO_Init used once
+Leds_out 00000000
+
+Symbol: Leds_out
+   Definitions
+      At line 54 in file main.s
+   Uses
+      At line 214 in file main.s
+Comment: Leds_out used once
+PLL_Init 00000000
+
+Symbol: PLL_Init
+   Definitions
+      At line 46 in file main.s
+   Uses
+      At line 58 in file main.s
+Comment: PLL_Init used once
+PortJ_Input 00000000
+
+Symbol: PortJ_Input
+   Definitions
+      At line 51 in file main.s
+   Uses
+      At line 83 in file main.s
+Comment: PortJ_Input used once
+PortN_Output 00000000
+
+Symbol: PortN_Output
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+External symbols
+
+   Definitions
+      At line 50 in file main.s
+   Uses
+      At line 139 in file main.s
+      At line 158 in file main.s
+
+SysTick_Init 00000000
+
+Symbol: SysTick_Init
+   Definitions
+      At line 47 in file main.s
+   Uses
+      At line 59 in file main.s
+Comment: SysTick_Init used once
+SysTick_Wait1ms 00000000
+
+Symbol: SysTick_Wait1ms
+   Definitions
+      At line 48 in file main.s
+   Uses
+      At line 154 in file main.s
+      At line 172 in file main.s
+      At line 219 in file main.s
+
+9 symbols
+381 symbols in table
