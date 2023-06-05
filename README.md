@@ -13,5 +13,4 @@ Cada display e os leds estão multiplexados, portanto para controla-los foi nece
 <img src="https://user-images.githubusercontent.com/16793600/194778503-e50ce5e1-3547-4190-be59-d58888f8bf76.PNG" width="700px"/>
 <h2>Fluxograma</h2>
 <img src="LAB1FLUXOGRAMA.png" />
- LAB1FLUXOGRAMA.png
 </div>
