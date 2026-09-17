@@ -1,6 +1,6 @@
 ## Outros projetos
 
-* [Bobinador](https://github.com/LeoCristo/Bobinador) — Projeto de controle de um bobinador.
+* [Bobinador](https://github.com/LeoCristo/Bobinador) — Projeto de controle de um bobinador. (Feito em C. No arquivo gpio.c existem algumas configurações de periféricos)
   
 # <h1 align="center"> Contadorasm </h1>
 
